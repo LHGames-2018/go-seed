@@ -14,6 +14,16 @@ const (
 
 type Upgrade int
 
+func (u Upgrade) ToJSON() string {
+	var mapping = make(map[Upgrade]string)
+	mapping[UpgradeCarryingCapacity] = "CarryingCapacity"
+	mapping[UpgradeMaximumHealth] = "Maximumhealth"
+	mapping[UpgradeCollectingSpeed] = "CollectingSpeed"
+	mapping[UpgradeAttack] = "AttackPower"
+	mapping[UpgradeDefence] = "Defence"
+	return mapping[u]
+}
+
 type Upgrades struct {
 	CarryingCapacity uint
 	MaximumHealth    uint

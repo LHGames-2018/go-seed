@@ -94,20 +94,20 @@ func (a MoveAction) JSONAction() JSONAction {
 func (a UpgradeAction) JSONAction() JSONAction {
 	return JSONAction{
 		Name:    "UpgradeAction",
-		Content: "TODO",
+		Content: a.Upgrade.ToJSON(),
 	}
 }
 
 func (a PurchaseAction) JSONAction() JSONAction {
 	return JSONAction{
 		Name:    "PurchaseAction",
-		Content: "TODO",
+		Content: a.Item.ToJSON(),
 	}
 }
 
 func (a HealAction) JSONAction() JSONAction {
 	return JSONAction{
 		Name:    "HealAction",
-		Content: "TODO",
+		Content: "",
 	}
 }
