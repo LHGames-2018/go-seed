@@ -4,6 +4,10 @@
 
 package main
 
+import (
+	"fmt"
+)
+
 type Point struct {
 	X int
 	Y int
@@ -12,6 +16,10 @@ type Point struct {
 type JSONPoint struct {
 	X int `json:"x"`
 	Y int `json:"y"`
+}
+
+func (p Point) ToJSON() string {
+	return fmt.Sprintf("{X:%d,Y:%d}", p.X, p.Y)
 }
 
 func (json JSONPoint) Point() Point {
