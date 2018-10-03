@@ -67,7 +67,7 @@ func main() {
 	http.HandleFunc("/", handleRequest)
 
 	/* start the HTTP server */
-	if err := http.ListenAndServe(":5555", nil); err != nil {
+	if err := http.ListenAndServe(":3000", nil); err != nil {
 		panic(err)
 	}
 }
