@@ -22,5 +22,5 @@ type Tile struct {
 type Resource struct {
 	Position  Point
 	Remaining int
-	Unknown   int
+	Density   float32
 }

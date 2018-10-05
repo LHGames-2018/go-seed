@@ -28,7 +28,8 @@ func (u *Map) UnmarshalJSON(data []byte) error {
 
 	/* definition of the parser */
 	ast := parsec.NewAST("MAP_PARSER", 100)
-	tileContent := ast.Many("TILE_CONTENT", nil, parsec.Int(), comma)
+	tileNumber := parsec.Token("\\d*\\.?\\d+", "TILE_NUMBER")
+	tileContent := ast.Many("TILE_CONTENT", nil, tileNumber, comma)
 	tileMaybe := ast.Maybe("TILE_MAYBE", nil, tileContent)
 	tileItem := ast.And("TILE_ITEM", nil, braceOpen, tileMaybe, braceClose)
 	rowContent := ast.Many("ROW_CONTENT", nil, tileItem, comma)
@@ -63,12 +64,13 @@ func (u *Map) UnmarshalJSON(data []byte) error {
 			}
 
 			/* try to decode the first node */
-			code, err := strconv.Atoi(nodes[0].GetValue())
+			codef, err := strconv.ParseFloat(nodes[0].GetValue(), 32)
 			if err != nil {
 				fmt.Println("Failed to parse `" + nodes[0].GetValue() + "`.")
 				row = append(row, Tile{Type: TileEmpty, Position: position})
 				continue
 			}
+			code := int(codef)
 
 			/* create a resource if it is one */
 			if code == TileResource {
@@ -80,15 +82,16 @@ func (u *Map) UnmarshalJSON(data []byte) error {
 				}
 
 				/* parse the second field */
-				max, err := strconv.Atoi(nodes[1].GetValue())
+				maxf, err := strconv.ParseFloat(nodes[1].GetValue(), 32)
 				if err != nil {
 					fmt.Println("Failed to parse `" + nodes[1].GetValue() + "`.")
 					row = append(row, Tile{Type: TileEmpty, Position: position})
 					continue
 				}
+				max := int(maxf)
 
 				/* parse the third field */
-				unknown, err := strconv.Atoi(nodes[2].GetValue())
+				density, err := strconv.ParseFloat(nodes[2].GetValue(), 32)
 				if err != nil {
 					fmt.Println("Failed to parse `" + nodes[2].GetValue() + "`.")
 					row = append(row, Tile{Type: TileEmpty, Position: position})
@@ -96,7 +99,7 @@ func (u *Map) UnmarshalJSON(data []byte) error {
 				}
 
 				/* add the resource */
-				resource := Resource{Position: position, Remaining: max, Unknown: unknown}
+				resource := Resource{Position: position, Remaining: max, Density: float32(density)}
 				resources = append(resources, resource)
 			}
 
