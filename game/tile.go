@@ -14,13 +14,44 @@ const (
 	TilePlayer   = 6
 )
 
+type ITile interface {
+	GetPosition() Point
+	GetType() int
+	SetPosition(Point)
+}
+
 type Tile struct {
 	Position Point
 	Type     int
 }
 
+func (t *Tile) GetPosition() Point {
+	return t.Position
+}
+
+func (t *Tile) GetType() int {
+	return t.Type
+}
+
+func (t *Tile) SetPosition(point Point) {
+	t.Position = point
+}
+
 type Resource struct {
 	Position  Point
+	Type      int
 	Remaining int
 	Density   float32
+}
+
+func (r *Resource) GetPosition() Point {
+	return r.Position
+}
+
+func (r *Resource) GetType() int {
+	return r.Type
+}
+
+func (r *Resource) SetPosition(point Point) {
+	r.Position = point
 }

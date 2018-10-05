@@ -14,8 +14,8 @@ import "github.com/prataprc/goparsec"
 
 type Map struct {
 	RelativeTo Point
-	Tiles      [][]Tile
-	Resources  []Resource
+	Tiles      [][]ITile
+	Resources  []*Resource
 }
 
 func (u *Map) UnmarshalJSON(data []byte) error {
@@ -45,11 +45,11 @@ func (u *Map) UnmarshalJSON(data []byte) error {
 	}
 
 	/* parse the resulting tree */
-	resources := []Resource{}
-	rows := [][]Tile{}
-	for j, rowNode := range root.GetChildren()[1].GetChildren() {
-		row := []Tile{}
-		for i, tileNode := range rowNode.GetChildren()[1].GetChildren() {
+	resources := []*Resource{}
+	rows := [][]ITile{}
+	for i, rowNode := range root.GetChildren()[1].GetChildren() {
+		row := []ITile{}
+		for j, tileNode := range rowNode.GetChildren()[1].GetChildren() {
 			/* get the nodes*/
 			tile := tileNode.GetChildren()[1]
 			nodes := tile.GetChildren()
@@ -59,7 +59,8 @@ func (u *Map) UnmarshalJSON(data []byte) error {
 
 			/* nothing means it's empty */
 			if len(nodes) == 0 {
-				row = append(row, Tile{Type: TileEmpty, Position: position})
+				tile := Tile{Type: TileEmpty, Position: position}
+				row = append(row, &tile)
 				continue
 			}
 
@@ -67,7 +68,8 @@ func (u *Map) UnmarshalJSON(data []byte) error {
 			codef, err := strconv.ParseFloat(nodes[0].GetValue(), 32)
 			if err != nil {
 				fmt.Println("Failed to parse `" + nodes[0].GetValue() + "`.")
-				row = append(row, Tile{Type: TileEmpty, Position: position})
+				tile := Tile{Type: TileEmpty, Position: position}
+				row = append(row, &tile)
 				continue
 			}
 			code := int(codef)
@@ -77,7 +79,8 @@ func (u *Map) UnmarshalJSON(data []byte) error {
 				/* make sure there is 3 fields */
 				if len(nodes) != 3 {
 					fmt.Println("Wrong number of field to a resource.")
-					row = append(row, Tile{Type: TileEmpty, Position: position})
+					tile := Tile{Type: TileEmpty, Position: position}
+					row = append(row, &tile)
 					continue
 				}
 
@@ -85,7 +88,8 @@ func (u *Map) UnmarshalJSON(data []byte) error {
 				maxf, err := strconv.ParseFloat(nodes[1].GetValue(), 32)
 				if err != nil {
 					fmt.Println("Failed to parse `" + nodes[1].GetValue() + "`.")
-					row = append(row, Tile{Type: TileEmpty, Position: position})
+					tile := Tile{Type: TileEmpty, Position: position}
+					row = append(row, &tile)
 					continue
 				}
 				max := int(maxf)
@@ -94,17 +98,26 @@ func (u *Map) UnmarshalJSON(data []byte) error {
 				density, err := strconv.ParseFloat(nodes[2].GetValue(), 32)
 				if err != nil {
 					fmt.Println("Failed to parse `" + nodes[2].GetValue() + "`.")
-					row = append(row, Tile{Type: TileEmpty, Position: position})
+					tile := Tile{Type: TileEmpty, Position: position}
+					row = append(row, &tile)
 					continue
 				}
 
 				/* add the resource */
-				resource := Resource{Position: position, Remaining: max, Density: float32(density)}
-				resources = append(resources, resource)
+				resource := Resource{
+					Position:  position,
+					Type:      TileResource,
+					Remaining: max,
+					Density:   float32(density),
+				}
+				resources = append(resources, &resource)
+				row = append(row, &resource)
+				continue
 			}
 
 			/* the code should be the same as the enumeration in tile.go */
-			row = append(row, Tile{Type: code, Position: position})
+			ttile := Tile{Type: code, Position: position}
+			row = append(row, &ttile)
 		}
 		rows = append(rows, row)
 	}
@@ -112,6 +125,7 @@ func (u *Map) UnmarshalJSON(data []byte) error {
 	/* update the struct's fields */
 	u.Tiles = rows
 	u.Resources = resources
+	u.RelativeTo = Point{X: 0, Y: 0}
 
 	return nil
 }
@@ -131,19 +145,40 @@ func (m *Map) Print() {
 	/* print all tile */
 	for _, row := range m.Tiles {
 		for _, tile := range row {
-			fmt.Print(string(mapping[tile.Type]) + " ")
+			fmt.Print(string(mapping[tile.GetType()]) + "  ")
 		}
 		fmt.Println("")
 	}
 }
 
 func (m *Map) SetRelativeTo(x int, y int) {
-	for j, row := range m.Tiles {
-		for i, tile := range row {
-			tile.Position.X = i + x
-			tile.Position.Y = j + y
+	for i, row := range m.Tiles {
+		for j, tile := range row {
+			newX := x + tile.GetPosition().X - m.RelativeTo.X
+			newY := y + tile.GetPosition().Y - m.RelativeTo.Y
+			m.Tiles[i][j].SetPosition(Point{X: newX, Y: newY})
 		}
 	}
-	m.RelativeTo.X = x
-	m.RelativeTo.Y = y
+	m.RelativeTo = Point{X: x, Y: y}
+}
+
+func (m *Map) GetTile(x int, y int) ITile {
+	/* get position relative to the array */
+	x = x - m.RelativeTo.X
+	y = y - m.RelativeTo.Y
+
+	/* make sure the x coordinate is inside the map */
+	if x < 0 || x >= len(m.Tiles) {
+		return nil
+	}
+
+	/* get the column */
+	column := m.Tiles[x]
+
+	/* make sure the y coordinate is inside the map */
+	if y < 0 || y >= len(column) {
+		return nil
+	}
+
+	return column[y]
 }
